@@ -1,14 +1,39 @@
 <!doctype html>
-<html>
+<html lang="en">
 
 <head>
 	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>Incident Triage Agent</title>
+	<link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body>
-	<h1>Incident Triage Agent</h1>
-	<p>Try the API at <code>/api/state?incidentId=test</code></p>
+	<main class="app">
+		<header class="header">
+			<h1>Incident Triage Agent</h1>
+			<p>Paste an incident description, logs, or errors.</p>
+		</header>
+
+		<section class="controls">
+			<label for="incidentId">Incident ID</label>
+			<input id="incidentId" type="text" value="test" />
+			<button id="newIncidentBtn" type="button">New Incident ID</button>
+		</section>
+
+		<section id="messages" class="messages"></section>
+
+		<form id="chatForm" class="chat-form">
+			<textarea id="messageInput" rows="6"
+				placeholder="Example: 500 errors spiked right after deployment and logs show repeated timeout errors from the payment service."
+				required></textarea>
+			<div class="actions">
+				<button id="sendBtn" type="submit">Send</button>
+			</div>
+		</form>
+	</main>
+
+	<script src="/app.js"></script>
 </body>
 
 </html>
