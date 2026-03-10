@@ -1,4 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
+import { createWorkersAI } from "workers-ai-provider";
+import { generateText, Output } from "ai";
+import { z } from "zod";
+import { INCIDENT_SYSTEM_PROMPT, buildIncidentPrompt } from "./prompts";
 
 type Message = {
 	role: "user" | "assistant";
@@ -17,6 +21,11 @@ type IncidentState = {
 	latestEvidence: string[];
 };
 
+type ChatRequest = {
+	incidentId: string;
+	message: string;
+};
+
 const createInitialState = (incidentId: string): IncidentState => {
 	const now = new Date().toISOString();
 
@@ -31,6 +40,15 @@ const createInitialState = (incidentId: string): IncidentState => {
 		latestEvidence: [],
 	};
 };
+
+const triageSchema = z.object({
+	summary: z.string(),
+	possibleCauses: z.array(z.string()).min(2).max(3),
+	nextSteps: z.array(z.string()).length(3),
+	followUpQuestion: z.string(),
+});
+
+type TriageResponse = z.infer<typeof triageSchema>;
 
 export class IncidentAgent extends DurableObject {
 	constructor(ctx: DurableObjectState, env: Env) {
@@ -85,6 +103,70 @@ export default {
 			await stub.updateState(nextState);
 
 			return Response.json(nextState);
+		}
+
+		if (url.pathname === "/api/chat" && request.method === "POST") {
+			const body = (await request.json()) as Partial<ChatRequest>;
+
+			if (!body.incidentId || !body.message) {
+				return Response.json(
+					{ error: "incidentId and message are required" },
+					{ status: 400 }
+				);
+			}
+
+			const stub = env.INCIDENT_AGENT.getByName(body.incidentId);
+			const currentState = await stub.getState(body.incidentId);
+
+			const now = new Date().toISOString();
+
+			const userMessage: Message = {
+				role: "user",
+				content: body.message,
+				timestamp: now,
+			};
+
+			const workingState: IncidentState = {
+				...currentState,
+				messages: [...currentState.messages, userMessage],
+				updatedAt: now,
+			};
+
+			const workersai = createWorkersAI({ binding: env.AI });
+
+			const { output } = await generateText({
+				model: workersai("@cf/meta/llama-4-scout-17b-16e-instruct"),
+				system: INCIDENT_SYSTEM_PROMPT,
+				prompt: buildIncidentPrompt(workingState, body.message),
+				output: Output.object({
+					schema: triageSchema,
+				}),
+			});
+
+			const aiResponse: TriageResponse = output;
+
+			const assistantMessage: Message = {
+				role: "assistant",
+				content: JSON.stringify(aiResponse),
+				timestamp: new Date().toISOString(),
+			};
+
+			const nextEvidence = Array.from(
+				new Set([...currentState.latestEvidence, body.message])
+			).slice(-5);
+
+			const nextState: IncidentState = {
+				...workingState,
+				summary: aiResponse.summary,
+				hypotheses: aiResponse.possibleCauses,
+				latestEvidence: nextEvidence,
+				messages: [...workingState.messages, assistantMessage],
+				updatedAt: new Date().toISOString(),
+			};
+
+			await stub.updateState(nextState);
+
+			return Response.json(aiResponse);
 		}
 
 		return new Response("Not found", { status: 404 });
