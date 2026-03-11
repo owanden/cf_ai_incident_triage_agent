@@ -13,7 +13,6 @@ function appendUserMessage(text) {
     <pre>${escapeHtml(text)}</pre>
   `;
     messagesEl.appendChild(wrapper);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
 function appendAssistantMessage(data) {
@@ -48,7 +47,16 @@ function appendAssistantMessage(data) {
     </div>
   `;
     messagesEl.appendChild(wrapper);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function appendRawAssistantMessage(text) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "message assistant";
+    wrapper.innerHTML = `
+    <div class="message-role">Assistant</div>
+    <pre>${escapeHtml(text)}</pre>
+  `;
+    messagesEl.appendChild(wrapper);
 }
 
 function appendErrorMessage(text) {
@@ -79,10 +87,91 @@ function generateIncidentId() {
     return `inc-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-newIncidentBtnEl.addEventListener("click", () => {
-    incidentIdEl.value = generateIncidentId();
+function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function clearMessages() {
     messagesEl.innerHTML = "";
+}
+
+function tryParseAssistantContent(content) {
+    try {
+        return JSON.parse(content);
+    } catch {
+        return null;
+    }
+}
+
+function renderSavedMessages(messages) {
+    clearMessages();
+
+    for (const msg of messages) {
+        if (msg.role === "user") {
+            appendUserMessage(msg.content);
+            continue;
+        }
+
+        const parsed = tryParseAssistantContent(msg.content);
+        if (
+            parsed &&
+            typeof parsed === "object" &&
+            "summary" in parsed &&
+            "possibleCauses" in parsed &&
+            "nextSteps" in parsed &&
+            "followUpQuestion" in parsed
+        ) {
+            appendAssistantMessage(parsed);
+        } else {
+            appendRawAssistantMessage(msg.content);
+        }
+    }
+
+    scrollToBottom();
+}
+
+async function loadIncidentState() {
+    const incidentId = incidentIdEl.value.trim();
+    if (!incidentId) return;
+
+    clearMessages();
+    appendRawAssistantMessage(`Loading incident ${incidentId}...`);
+
+    try {
+        const response = await fetch(
+            `/api/state?incidentId=${encodeURIComponent(incidentId)}`
+        );
+        const state = await response.json();
+
+        if (!response.ok) {
+            clearMessages();
+            appendErrorMessage(state.error || "Failed to load incident");
+            return;
+        }
+
+        if (Array.isArray(state.messages) && state.messages.length > 0) {
+            renderSavedMessages(state.messages);
+        } else {
+            clearMessages();
+            appendRawAssistantMessage(
+                "No saved conversation yet. Paste logs or describe the incident to begin."
+            );
+        }
+    } catch (error) {
+        clearMessages();
+        appendErrorMessage(error instanceof Error ? error.message : "Unknown error");
+    }
+}
+
+newIncidentBtnEl.addEventListener("click", async () => {
+    incidentIdEl.value = generateIncidentId();
+    clearMessages();
+    appendRawAssistantMessage(
+        "New incident created. Paste logs or describe the issue to begin."
+    );
 });
+
+incidentIdEl.addEventListener("change", loadIncidentState);
 
 formEl.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -93,6 +182,7 @@ formEl.addEventListener("submit", async (event) => {
     if (!message || !incidentId) return;
 
     appendUserMessage(message);
+    scrollToBottom();
     inputEl.value = "";
     setLoading(true);
 
@@ -113,9 +203,12 @@ formEl.addEventListener("submit", async (event) => {
         }
 
         appendAssistantMessage(data);
+        scrollToBottom();
     } catch (error) {
         appendErrorMessage(error instanceof Error ? error.message : "Unknown error");
     } finally {
         setLoading(false);
     }
 });
+
+loadIncidentState();
