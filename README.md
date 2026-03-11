@@ -11,12 +11,9 @@ The agent analyzes logs and system errors to generate:
 
 ## Architecture
 
-Browser Chat UI
-      ↓
-Cloudflare Worker
-      ↓
-Workers AI (Llama)
-      ↓
+Browser Chat UI -->
+Cloudflare Worker -->
+Workers AI (Llama) -->
 Durable Object (incident memory)
 
 ## Features
