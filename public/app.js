@@ -5,6 +5,10 @@ const incidentIdEl = document.getElementById("incidentId");
 const sendBtnEl = document.getElementById("sendBtn");
 const newIncidentBtnEl = document.getElementById("newIncidentBtn");
 
+const incidentStatusEl = document.getElementById("incidentStatus");
+const incidentSummaryEl = document.getElementById("incidentSummary");
+const incidentHypothesesEl = document.getElementById("incidentHypotheses");
+
 function appendUserMessage(text) {
     const wrapper = document.createElement("div");
     wrapper.className = "message user";
@@ -103,6 +107,43 @@ function tryParseAssistantContent(content) {
     }
 }
 
+function resetOverview() {
+    incidentStatusEl.textContent = "open";
+    incidentSummaryEl.textContent = "No summary yet.";
+    incidentHypothesesEl.innerHTML = "<li>No hypotheses yet.</li>";
+}
+
+function renderOverview(state) {
+    incidentStatusEl.textContent = state.status || "open";
+    incidentSummaryEl.textContent =
+        state.summary && state.summary.trim().length > 0
+            ? state.summary
+            : "No summary yet.";
+
+    if (Array.isArray(state.hypotheses) && state.hypotheses.length > 0) {
+        incidentHypothesesEl.innerHTML = state.hypotheses
+            .map((hypothesis) => `<li>${escapeHtml(hypothesis)}</li>`)
+            .join("");
+    } else {
+        incidentHypothesesEl.innerHTML = "<li>No hypotheses yet.</li>";
+    }
+}
+
+function renderOverviewFromChatResponse(data) {
+    incidentSummaryEl.textContent =
+        data.summary && data.summary.trim().length > 0
+            ? data.summary
+            : "No summary yet.";
+
+    if (Array.isArray(data.possibleCauses) && data.possibleCauses.length > 0) {
+        incidentHypothesesEl.innerHTML = data.possibleCauses
+            .map((cause) => `<li>${escapeHtml(cause)}</li>`)
+            .join("");
+    } else {
+        incidentHypothesesEl.innerHTML = "<li>No hypotheses yet.</li>";
+    }
+}
+
 function renderSavedMessages(messages) {
     clearMessages();
 
@@ -135,6 +176,7 @@ async function loadIncidentState() {
     if (!incidentId) return;
 
     clearMessages();
+    resetOverview();
     appendRawAssistantMessage(`Loading incident ${incidentId}...`);
 
     try {
@@ -148,6 +190,8 @@ async function loadIncidentState() {
             appendErrorMessage(state.error || "Failed to load incident");
             return;
         }
+
+        renderOverview(state);
 
         if (Array.isArray(state.messages) && state.messages.length > 0) {
             renderSavedMessages(state.messages);
@@ -166,6 +210,7 @@ async function loadIncidentState() {
 newIncidentBtnEl.addEventListener("click", async () => {
     incidentIdEl.value = generateIncidentId();
     clearMessages();
+    resetOverview();
     appendRawAssistantMessage(
         "New incident created. Paste logs or describe the issue to begin."
     );
@@ -203,6 +248,7 @@ formEl.addEventListener("submit", async (event) => {
         }
 
         appendAssistantMessage(data);
+        renderOverviewFromChatResponse(data);
         scrollToBottom();
     } catch (error) {
         appendErrorMessage(error instanceof Error ? error.message : "Unknown error");

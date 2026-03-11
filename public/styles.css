@@ -117,3 +117,69 @@ body {
     color: #93c5fd;
     font-style: italic;
 }
+
+.overview {
+    margin-bottom: 20px;
+}
+
+.overview-card {
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.overview-card h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.overview-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.overview-label {
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #1d4ed8;
+    color: white;
+    font-size: 0.85rem;
+    text-transform: capitalize;
+}
+
+.overview-block {
+    margin-bottom: 16px;
+}
+
+.overview-block:last-child {
+    margin-bottom: 0;
+}
+
+.overview-block h3 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    color: #cbd5e1;
+}
+
+.overview-block p {
+    margin: 0;
+    color: #e2e8f0;
+}
+
+.overview-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.overview-list li {
+    margin-bottom: 6px;
+}
