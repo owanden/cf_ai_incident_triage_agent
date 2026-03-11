@@ -9,6 +9,38 @@ const incidentStatusEl = document.getElementById("incidentStatus");
 const incidentSummaryEl = document.getElementById("incidentSummary");
 const incidentHypothesesEl = document.getElementById("incidentHypotheses");
 
+async function toggleIncidentStatus() {
+    const incidentId = incidentIdEl.value.trim();
+    if (!incidentId) return;
+
+    const currentStatus = incidentStatusEl.textContent.trim();
+    const nextStatus = currentStatus === "open" ? "resolved" : "open";
+
+    try {
+        const response = await fetch("/api/state", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                incidentId,
+                status: nextStatus,
+            }),
+        });
+
+        const state = await response.json();
+
+        if (!response.ok) {
+            appendErrorMessage(state.error || "Failed to update status");
+            return;
+        }
+
+        renderOverview(state);
+    } catch (error) {
+        appendErrorMessage(error instanceof Error ? error.message : "Unknown error");
+    }
+}
+
 function appendUserMessage(text) {
     const wrapper = document.createElement("div");
     wrapper.className = "message user";
@@ -114,7 +146,11 @@ function resetOverview() {
 }
 
 function renderOverview(state) {
-    incidentStatusEl.textContent = state.status || "open";
+    const status = state.status || "open";
+
+    incidentStatusEl.textContent = status;
+    incidentStatusEl.className = `status-badge ${status}`;
+
     incidentSummaryEl.textContent =
         state.summary && state.summary.trim().length > 0
             ? state.summary
@@ -122,7 +158,7 @@ function renderOverview(state) {
 
     if (Array.isArray(state.hypotheses) && state.hypotheses.length > 0) {
         incidentHypothesesEl.innerHTML = state.hypotheses
-            .map((hypothesis) => `<li>${escapeHtml(hypothesis)}</li>`)
+            .map((h) => `<li>${escapeHtml(h)}</li>`)
             .join("");
     } else {
         incidentHypothesesEl.innerHTML = "<li>No hypotheses yet.</li>";
@@ -217,6 +253,8 @@ newIncidentBtnEl.addEventListener("click", async () => {
 });
 
 incidentIdEl.addEventListener("change", loadIncidentState);
+
+incidentStatusEl.addEventListener("click", toggleIncidentStatus);
 
 formEl.addEventListener("submit", async (event) => {
     event.preventDefault();

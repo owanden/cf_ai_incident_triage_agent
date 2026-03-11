@@ -150,10 +150,23 @@ body {
     display: inline-block;
     padding: 4px 10px;
     border-radius: 999px;
-    background: #1d4ed8;
-    color: white;
     font-size: 0.85rem;
     text-transform: capitalize;
+    cursor: pointer;
+}
+
+.status-badge.open {
+    background: #1d4ed8;
+    color: white;
+}
+
+.status-badge.resolved {
+    background: #059669;
+    color: white;
+}
+
+.status-badge:hover {
+    opacity: 0.85;
 }
 
 .overview-block {
