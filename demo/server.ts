@@ -2,17 +2,14 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createHandler } from "../src/api";
-import { createInitialState, IncidentState } from "../src/contracts";
+import { createMemoryStore } from "./store";
 import fixture from "./fixture.json";
 
-const states = new Map<string, IncidentState>();
-const handler = createHandler(id => ({
-  async getState() {
-    if (!states.has(id)) states.set(id, createInitialState(id));
-    return structuredClone(states.get(id)!);
-  },
-  async updateState(state) { states.set(id, structuredClone(state)); },
-}), async prompt => {
+const stores = new Map<string, ReturnType<typeof createMemoryStore>>();
+const handler = createHandler(id => {
+  if (!stores.has(id)) stores.set(id, createMemoryStore());
+  return stores.get(id)!;
+}, async prompt => {
   if (prompt.includes("[simulate-provider-error]")) throw new Error("fixture failure");
   return structuredClone(fixture);
 });

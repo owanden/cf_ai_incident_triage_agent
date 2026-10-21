@@ -19,7 +19,7 @@ Open http://127.0.0.1:8787/. The server binds to loopback and labels itself **Fi
 4. Submit `[simulate-provider-error]`. The UI reports `triage_unavailable`; the failed turn does not overwrite saved incident state. Reload to see only successful saved turns.
 5. Choose **New Incident ID** to start a separate session. Stop with Ctrl+C; all fixture sessions are discarded. Set `DEMO_PORT` before startup if port 8787 is occupied.
 
-This demonstrates UI/API behavior and failure handling, not model quality, real root-cause accuracy, Durable Object durability, or Cloudflare runtime behavior.
+This walkthrough demonstrates UI/API behavior and failure handling, not model quality, real root-cause accuracy, or Durable Object durability. The separate automated storage check uses a local Workers runtime, not a deployed Cloudflare service.
 
 ## Architecture
 
@@ -44,14 +44,16 @@ npm test
 npx wrangler deploy --dry-run --outdir dist/worker
 ```
 
-Tests typecheck the Worker source, compile the standalone fixture, and check chat persistence, status-only updates, malformed requests, provider/output failures, storage errors, separate incident IDs, bounded recent evidence, and real loopback fixture HTTP/assets. All providers/stores in these checks are fixtures; no credentials or paid model calls are used. The dry run bundles the Worker without deploying it. GitHub Actions repeats the locked install, checks, and dry run on Node.js 22.
+Tests typecheck the Worker source, compile the standalone fixture, and check chat persistence, status-only updates, malformed requests, provider/output failures, storage errors, separate incident IDs, bounded recent evidence, delayed generation, overlapping chats, and real loopback fixture HTTP/assets. A separate Wrangler local test exercises the actual Durable Object class and SQLite transactions with concurrent initialization, turn appends and status changes. Its test-only Worker has no AI binding and is never selected by the production configuration. No credentials or paid model calls are used. The pinned Wrangler runtime reports a local compatibility fallback from the configured 2026-03-10 to 2026-03-01; these checks do not establish behavior on the deployed platform. The dry run bundles the Worker without deploying it. GitHub Actions repeats the locked install, checks, and dry run on Node.js 22.
 
 ## API contract
 
 - `GET /api/state?incidentId=test` loads a session. IDs contain 1..128 ASCII letters, digits, underscores, or hyphens; omission retains the `default` ID.
-- `POST /api/chat` accepts only `incidentId` and a nonblank `message` capped at 8,000 characters. A successful structured response and both messages are saved together by the handler after generation succeeds.
+- `POST /api/chat` accepts only `incidentId` and a nonblank `message` capped at 8,000 characters. A successful structured response and both messages are appended together in a storage transaction after generation succeeds.
 - `POST /api/state` accepts only `incidentId` and `status` (`open` or `resolved`). Clients cannot patch summary, messages, timestamps, or evidence through this endpoint.
 - Invalid JSON/input returns 400; failed generation or invalid structured output returns 502; storage failure returns 503. Errors are JSON with fixed categories, without raw provider/storage exception messages. Unrecognized routes/methods return 404.
+
+Generation uses a snapshot taken when the request starts, outside any storage transaction. Saving a successful turn rereads current state atomically, preserving status and other committed turns. Conversation pairs and evidence follow successful commit order; summary and hypotheses come from the last committed response, even if that request started earlier. Concurrent requests can therefore generate from the same older context. Failed generation commits no turn. This does not provide request deduplication or retry idempotency. The fixture serializes its in-memory transactions; the Worker uses Durable Object storage transactions.
 
 The SDK also receives the output schema. Summaries, causes, steps and questions have bounded string lengths; output requires two or three possible causes and exactly three next steps.
 
@@ -59,4 +61,4 @@ The SDK also receives the output schema. Summaries, causes, steps and questions 
 
 `npm run dev` still starts the existing Wrangler configuration and real Workers AI binding. It is distinct from the safe local fixture. Real inference requires separately configured Cloudflare access and may consume provider usage. No account setup, model request, remote deployment or inference-quality measurement was performed for the fixture checks.
 
-The project has no authentication or authorization boundary; incident IDs are identifiers, not access controls. Concurrent chat/status updates can overwrite a snapshot because there is no per-incident request serialization/version check. Full message history is retained without a retention policy, while prompts use recent conversation and the latest five distinct evidence entries. Sensitive-data redaction, model deadlines and durable retry behavior are not implemented. Use synthetic incidents for demonstrations.
+The project has no authentication or authorization boundary; incident IDs are identifiers, not access controls. Full message history is retained without a retention policy, while prompts use recent conversation and the latest five distinct evidence entries. Sensitive-data redaction, model deadlines and durable retry behavior are not implemented. Use synthetic incidents for demonstrations.

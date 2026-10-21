@@ -22,6 +22,8 @@ export const triageSchema = z.object({
   followUpQuestion: z.string().min(1).max(1000),
 });
 
+export type Triage = z.infer<typeof triageSchema>;
+
 export function createInitialState(incidentId: string): IncidentState {
   const now = new Date().toISOString();
   return { incidentId, createdAt: now, updatedAt: now, status: "open", summary: "", hypotheses: [], messages: [], latestEvidence: [] };

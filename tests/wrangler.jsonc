@@ -1,0 +1,9 @@
+{
+  "name": "incident-storage-check",
+  "main": "storage-worker.ts",
+  "compatibility_date": "2026-03-10",
+  "durable_objects": {
+    "bindings": [{ "name": "INCIDENT_AGENT", "class_name": "IncidentAgent" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["IncidentAgent"] }]
+}

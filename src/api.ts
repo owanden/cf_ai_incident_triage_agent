@@ -1,10 +1,6 @@
-import { chatSchema, statusSchema, incidentIdSchema, triageSchema, IncidentState, Message } from "./contracts";
+import { chatSchema, statusSchema, incidentIdSchema, triageSchema, Message } from "./contracts";
 import { buildIncidentPrompt } from "./prompts";
-
-export interface IncidentStore {
-  getState(incidentId: string): Promise<IncidentState>;
-  updateState(state: IncidentState): Promise<void>;
-}
+import { IncidentStore } from "./store";
 
 export function createHandler(getStore: (id: string) => IncidentStore, generate: (prompt: string) => Promise<unknown>) {
   return async (request: Request): Promise<Response> => {
@@ -26,10 +22,7 @@ export function createHandler(getStore: (id: string) => IncidentStore, generate:
         if (!parsed.success) return Response.json({ error: "invalid_status_update" }, { status: 400 });
         const { incidentId, status } = parsed.data;
         const store = getStore(incidentId);
-        const current = await store.getState(incidentId);
-        const next = { ...current, status, updatedAt: new Date().toISOString() };
-        await store.updateState(next);
-        return Response.json(next);
+        return Response.json(await store.setStatus(incidentId, status));
       }
       const parsed = chatSchema.safeParse(body);
       if (!parsed.success) return Response.json({ error: "invalid_chat_request" }, { status: 400 });
@@ -42,12 +35,7 @@ export function createHandler(getStore: (id: string) => IncidentStore, generate:
       let output;
       try { output = triageSchema.parse(await generate(buildIncidentPrompt(working, message))); }
       catch { return Response.json({ error: "triage_unavailable" }, { status: 502 }); }
-      const assistant: Message = { role: "assistant", content: JSON.stringify(output), timestamp: new Date().toISOString() };
-      await store.updateState({
-        ...working, summary: output.summary, hypotheses: output.possibleCauses,
-        messages: [...working.messages, assistant],
-        latestEvidence: [...new Set([...current.latestEvidence, message])].slice(-5),
-      });
+      await store.appendTurn(incidentId, user, output);
       return Response.json(output);
     } catch {
       return Response.json({ error: "state_unavailable" }, { status: 503 });
