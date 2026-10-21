@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "commonjs",
+    "noEmit": false,
+    "esModuleInterop": true,
+    "rootDir": ".",
+    "outDir": "dist/demo",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/api.ts",
+    "src/contracts.ts",
+    "src/prompts.ts",
+    "demo/server.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

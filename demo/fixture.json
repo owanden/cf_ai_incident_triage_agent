@@ -1,0 +1,13 @@
+{
+  "summary": "Fixture response: deployment coincided with timeout errors.",
+  "possibleCauses": [
+    "A downstream dependency is responding slowly.",
+    "A deployment changed connection or timeout configuration."
+  ],
+  "nextSteps": [
+    "Compare timeout rates before and after the deployment.",
+    "Inspect downstream latency and connection-pool saturation.",
+    "Compare the deployed configuration with the previous version."
+  ],
+  "followUpQuestion": "Which dependency first reports increased latency?"
+}

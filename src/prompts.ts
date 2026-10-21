@@ -1,19 +1,4 @@
-type Message = {
-    role: "user" | "assistant";
-    content: string;
-    timestamp: string;
-};
-
-type IncidentState = {
-    incidentId: string;
-    createdAt: string;
-    updatedAt: string;
-    status: "open" | "resolved";
-    summary: string;
-    hypotheses: string[];
-    messages: Message[];
-    latestEvidence: string[];
-};
+import type { IncidentState } from "./contracts";
 
 export const INCIDENT_SYSTEM_PROMPT = `
 You are an incident triage assistant.
