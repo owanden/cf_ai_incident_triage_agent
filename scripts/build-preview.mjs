@@ -35,7 +35,7 @@ html = html.replace('<title>Incident Triage Agent</title>', `<title>Incident Tri
 <h2>Browser preview</h2>
 <p>Fixed example responses, not AI-generated findings. Synthetic data only. No backend or model calls. Entered text stays in this tab's memory; reload clears all sessions.</p>
 <div class="controls"><button id="sampleBtn" type="button">Run sample</button><button id="failureBtn" type="button">Simulate failure</button><button id="resetBtn" type="button">Reset preview</button></div>
-<p><a href="../../#projects">Portfolio</a> Ã‚&middot; <a href="https://github.com/owanden/cf_ai_incident_triage_agent">Source</a> Ã‚&middot; <a href="https://github.com/owanden/cf_ai_incident_triage_agent#run-the-fixture-demo">Local full-stack demo</a></p>
+<p><a href="../../#projects">Portfolio</a> &middot; <a href="https://github.com/owanden/cf_ai_incident_triage_agent">Source</a> &middot; <a href="https://github.com/owanden/cf_ai_incident_triage_agent#run-the-fixture-demo">Local full-stack demo</a></p>
 </section>`)
   .replace('Paste an incident description, logs, or errors.', 'Enter synthetic details, or run the fixed sample above.');
 await mkdir('dist/preview', { recursive: true });
