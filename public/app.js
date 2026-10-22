@@ -9,10 +9,24 @@ const incidentStatusEl = document.getElementById("incidentStatus");
 const incidentSummaryEl = document.getElementById("incidentSummary");
 const incidentHypothesesEl = document.getElementById("incidentHypotheses");
 
+let viewVersion = 0;
+
+function isCurrentView(version, incidentId) {
+    return version === viewVersion && incidentId === incidentIdEl.value.trim();
+}
+
+function invalidateView() {
+    viewVersion++;
+    clearMessages();
+    resetOverview();
+    setLoading(false);
+}
+
 async function toggleIncidentStatus() {
     const incidentId = incidentIdEl.value.trim();
     if (!incidentId) return;
 
+    const version = viewVersion;
     const currentStatus = incidentStatusEl.textContent.trim();
     const nextStatus = currentStatus === "open" ? "resolved" : "open";
 
@@ -29,6 +43,7 @@ async function toggleIncidentStatus() {
         });
 
         const state = await response.json();
+        if (!isCurrentView(version, incidentId)) return;
 
         if (!response.ok) {
             appendErrorMessage(state.error || "Failed to update status");
@@ -37,6 +52,7 @@ async function toggleIncidentStatus() {
 
         renderOverview(state);
     } catch (error) {
+        if (!isCurrentView(version, incidentId)) return;
         appendErrorMessage(error instanceof Error ? error.message : "Unknown error");
     }
 }
@@ -141,6 +157,7 @@ function tryParseAssistantContent(content) {
 
 function resetOverview() {
     incidentStatusEl.textContent = "open";
+    incidentStatusEl.className = "status-badge open";
     incidentSummaryEl.textContent = "No summary yet.";
     incidentHypothesesEl.innerHTML = "<li>No hypotheses yet.</li>";
 }
@@ -211,8 +228,8 @@ async function loadIncidentState() {
     const incidentId = incidentIdEl.value.trim();
     if (!incidentId) return;
 
-    clearMessages();
-    resetOverview();
+    invalidateView();
+    const version = viewVersion;
     appendRawAssistantMessage(`Loading incident ${incidentId}...`);
 
     try {
@@ -220,6 +237,7 @@ async function loadIncidentState() {
             `/api/state?incidentId=${encodeURIComponent(incidentId)}`
         );
         const state = await response.json();
+        if (!isCurrentView(version, incidentId)) return;
 
         if (!response.ok) {
             clearMessages();
@@ -238,19 +256,18 @@ async function loadIncidentState() {
             );
         }
     } catch (error) {
+        if (!isCurrentView(version, incidentId)) return;
         clearMessages();
         appendErrorMessage(error instanceof Error ? error.message : "Unknown error");
     }
 }
 
-newIncidentBtnEl.addEventListener("click", async () => {
+newIncidentBtnEl.addEventListener("click", () => {
     incidentIdEl.value = generateIncidentId();
-    clearMessages();
-    resetOverview();
-    appendRawAssistantMessage(
-        "New incident created. Paste logs or describe the issue to begin."
-    );
+    loadIncidentState();
 });
+
+incidentIdEl.addEventListener("input", invalidateView);
 
 incidentIdEl.addEventListener("change", loadIncidentState);
 
@@ -264,6 +281,7 @@ formEl.addEventListener("submit", async (event) => {
 
     if (!message || !incidentId) return;
 
+    const version = viewVersion;
     appendUserMessage(message);
     scrollToBottom();
     inputEl.value = "";
@@ -279,6 +297,7 @@ formEl.addEventListener("submit", async (event) => {
         });
 
         const data = await response.json();
+        if (!isCurrentView(version, incidentId)) return;
 
         if (!response.ok) {
             appendErrorMessage(data.error || "Request failed");
@@ -289,9 +308,10 @@ formEl.addEventListener("submit", async (event) => {
         renderOverviewFromChatResponse(data);
         scrollToBottom();
     } catch (error) {
+        if (!isCurrentView(version, incidentId)) return;
         appendErrorMessage(error instanceof Error ? error.message : "Unknown error");
     } finally {
-        setLoading(false);
+        if (isCurrentView(version, incidentId)) setLoading(false);
     }
 });
 
