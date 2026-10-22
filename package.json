@@ -10,10 +10,12 @@
 		"typecheck": "tsc --noEmit",
 		"build:demo": "tsc -p tsconfig.demo.json",
 		"demo": "npm run build:demo && node dist/demo/demo/server.js",
-		"test": "npm run typecheck && npm run build:demo && node --test tests/*.test.cjs"
+		"test": "npm run typecheck && npm run build:demo && node --test tests/*.test.cjs",
+		"build:preview": "node scripts/build-preview.mjs"
 	},
 	"devDependencies": {
 		"@types/node": "^25.4.0",
+		"esbuild": "0.27.3",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.71.0"
 	},

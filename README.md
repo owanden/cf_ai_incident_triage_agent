@@ -2,6 +2,12 @@
 
 An incident debugging interface with structured summaries, possible causes, next steps, and session history. The Cloudflare Worker uses Workers AI and Durable Objects. A separate local fixture mode demonstrates the application contract without a model account or inference calls.
 
+## Browser preview
+
+[Try the browser preview](https://owanden.github.io/demos/incident-triage/). Run the sample, simulate a provider failure, toggle status, or switch incident IDs. Responses are fixed examples, not generated findings. Use synthetic details only. No data leaves the tab; sessions live only in memory and reload clears them. This preview does not demonstrate a deployed Worker, model quality or durable storage.
+
+Build with `npm run build:preview` after the locked installation below. Serve `dist/preview/` with a static HTTP server. The build bundles the existing browser UI with the shared request handler, schemas, fixture and in-memory transaction adapter. The production assets and Worker entry remain unchanged. A module allowlist rejects unexpected bundle inputs, and the generated page blocks network connections with `connect-src 'none'`. No service worker, local/session storage or external assets are used.
+
 ## Run the fixture demo
 
 Requires Node.js 22 and npm. From a fresh checkout:
