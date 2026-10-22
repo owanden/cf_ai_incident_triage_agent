@@ -148,6 +148,8 @@ body {
 
 .status-badge {
     display: inline-block;
+    border: none;
+    font-family: inherit;
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 0.85rem;
@@ -195,4 +197,21 @@ body {
 
 .overview-list li {
     margin-bottom: 6px;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid #fbbf24;
+    outline-offset: 3px;
+}
+
+.chat-form label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.status-help {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin: 0 0 16px;
 }

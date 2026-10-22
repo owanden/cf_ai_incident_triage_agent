@@ -15,9 +15,11 @@ Open http://127.0.0.1:8787/. The server binds to loopback and labels itself **Fi
 
 1. Leave the initial incident ID as `test`. Submit `Synthetic incident: timeout errors appeared after deployment.`
 2. Inspect the structured response and updated overview. The summary explicitly says **Fixture response**; every valid submission returns the same fixture. These are not generated findings.
-3. Select the status badge to mark the incident resolved. Reload the page: conversation and status remain for that ID while the demo process stays running.
+3. Activate the status button to mark the incident resolved. It is reachable with Tab and supports Enter or Space; its help text explains the toggle. Reload the page: conversation and status remain for that ID while the demo process stays running.
 4. Submit `[simulate-provider-error]`. The UI reports `triage_unavailable`; the failed turn does not overwrite saved incident state. Reload to see only successful saved turns.
 5. Choose **New Incident ID** to start a separate session. Stop with Ctrl+C; all fixture sessions are discarded. Set `DEMO_PORT` before startup if port 8787 is occupied.
+
+Keyboard walkthrough: Tab through Incident ID, New Incident ID, Status, Incident details, and Send. Each control has a visible focus outline. Use Enter or Space on Status, then enter synthetic details and activate Send.
 
 This walkthrough demonstrates UI/API behavior and failure handling, not model quality, real root-cause accuracy, or Durable Object durability. The separate automated storage check uses a local Workers runtime, not a deployed Cloudflare service.
 

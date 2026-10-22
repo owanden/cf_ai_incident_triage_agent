@@ -26,9 +26,12 @@
 				<h2>Incident Overview</h2>
 
 				<div class="overview-row">
-					<span class="overview-label">Status</span>
-					<span id="incidentStatus" class="status-badge open">open</span>
+					<span id="statusLabel" class="overview-label">Status</span>
+					<button id="incidentStatus" class="status-badge open" type="button"
+						aria-labelledby="statusLabel incidentStatus" aria-describedby="statusHelp">open</button>
 				</div>
+
+				<p id="statusHelp" class="status-help">Activate to switch between open and resolved.</p>
 
 				<div class="overview-block">
 					<h3>Summary</h3>
@@ -47,6 +50,7 @@
 		<section id="messages" class="messages"></section>
 
 		<form id="chatForm" class="chat-form">
+			<label for="messageInput">Incident details</label>
 			<textarea id="messageInput" rows="6"
 				placeholder="Example: 500 errors spiked right after deployment and logs show repeated timeout errors from the payment service."
 				required></textarea>
